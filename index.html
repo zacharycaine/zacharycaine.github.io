@@ -1,50 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-        integrity="sha384-KJ4oW/5xl6v0nr3b3O/Bm5lMd/ZyMTS4IqGdXJhxKzmSfL9+9KMWxb3ip3PI+2n"
-        crossorigin="anonymous">
-    <title>Zacharycaine</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="love.css" rel="stylesheet">
 </head>
-
-<body class="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-sans">
-
-    <!-- Navigation Section (Optional) -->
-    <nav class="bg-transparent p-4">
-        <!-- Add your navigation items here -->
-    </nav>
-
-    <!-- Hero Section -->
-    <header class="h-screen flex items-center justify-center">
-        <div class="text-center">
-            <h1 class="text-4xl md:text-6xl font-bold mb-4">Zacharycaine</h1>
-            <p class="text-lg md:text-xl mb-8">Web Developer | Designer | Tech Enthusiast</p>
-            <p class="text-gray-300">Welcome to my personal website. I love building things and exploring new technologies.</p>
-        </div>
-    </header>
-
-    <!-- About Me Section -->
-    <section class="bg-gray-800 text-white py-12">
-        <div class="container mx-auto text-center">
-            <h2 class="text-3xl md:text-4xl font-bold mb-6">About Me</h2>
-            <p class="text-lg">I'm a passionate web developer with a keen interest in design and technology. My goal is to
-                create
-                meaningful and innovative solutions that make a positive impact.</p>
-        </div>
-    </section>
-
-    <!-- More Sections as Needed -->
-
-    <!-- Footer Section (Optional) -->
-    <footer class="bg-gray-900 text-white py-4">
-        <div class="container mx-auto text-center">
-            <!-- Add your footer content here -->
-        </div>
-    </footer>
-
+<body>
+  <h1 class="text-3xl font-bold underline">
+    zacharycaine
+  </h1>
 </body>
-
 </html>
+
+<div class="chat-notification">
+    <div class="chat-notification-logo-wrapper">
+      <img class="chat-notification-logo" src="/img/logo.svg" alt="ChitChat Logo">
+    </div>
+    <div class="chat-notification-content">
+      <h4 class="chat-notification-title">ChitChat</h4>
+      <p class="chat-notification-message">You have a new message!</p>
+    </div>
+  </div>
+
+<style>
+    .chat-notification {
+      display: flex;
+      max-width: 24rem;
+      margin: 0 auto;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      background-color: #fff;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .chat-notification-logo-wrapper {
+      flex-shrink: 0;
+    }
+    .chat-notification-logo {
+      height: 3rem;
+      width: 3rem;
+    }
+    .chat-notification-content {
+      margin-left: 1.5rem;
+      padding-top: 0.25rem;
+    }
+    .chat-notification-title {
+      color: #1a202c;
+      font-size: 1.25rem;
+      line-height: 1.25;
+    }
+    .chat-notification-message {
+      color: #718096;
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+  </style>
