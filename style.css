@@ -91,10 +91,13 @@ footer {
 }
 
 
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
     nav ul li {
         display: block;
         margin: 10px 0;
+    }
+    .split-layout {
+        flex-direction: column;
     }
     /* More responsive design adjustments */
 }
