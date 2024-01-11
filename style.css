@@ -8,19 +8,18 @@
 
 body {
     background-color: rgb(0, 0, 0);
-    font-family: 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
     color: #222222;
 }
 
 header {
     display: flex;
-    align-items: center; /* Vertically align items in the center */
-    justify-content: space-around; /* Horizontally space out the items */
+    align-items: left; /* Vertically align items in the center */
+    justify-content: space-between; /* Horizontally space out the items */
     /* Other styles for your header */
     color: white;
     background-color: rgb(34, 34, 34);
-    padding: auto;
+    padding: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
@@ -74,6 +73,13 @@ footer {
     background-position: center; /* Center the image in the div */
 }
 
+.left-side img {
+    width: 100%; /* Makes the image take the full width of its container */
+    height: 100%; /* Adjust the height as necessary */
+    object-fit: cover; /* This will ensure the image covers the area without distorting */
+}
+
+
 .right-side {
     /* Styling for the right side content */
 }
@@ -90,10 +96,24 @@ footer {
     color: white;
 }
 
+.menu-button {
+    display: none;
+    margin-left: 2px;
+}
 
 @media screen and (max-width: 768px) {
-    nav ul li {
+    .left-side {
         display: block;
+    }
+    .left-side img {
+        width: 100%;
+        height: auto;
+    }
+    .menu-button{
+        display: block;
+    }
+    nav ul li {
+        display: none;
         margin: 10px 0;
     }
     .split-layout {
