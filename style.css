@@ -1,0 +1,33 @@
+/* Add to existing style.css */
+
+.nav-toggle {
+    display: none;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: block;
+        text-align: right;
+        padding: 20px;
+    }
+
+    nav ul {
+        display: none;
+        width: 100%;
+        padding: 20px;
+        background: #f8f8f7;
+        text-align: left;
+    }
+
+    nav ul.active {
+        display: block;
+    }
+
+    nav ul li {
+        display: block;
+        margin: 10px 0;
+    }
+}
