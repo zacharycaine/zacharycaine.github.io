@@ -1,22 +1,59 @@
-// Responsive Menu Toggle
+// Check to see if Javascript loaded
+console.log('Script loaded');
+
 document.addEventListener('DOMContentLoaded', () => {
-    const nav = document.querySelector('nav');
-    const navToggle = document.createElement('div');
-    navToggle.innerHTML = '&#9776;'; // Unicode for menu icon
-    navToggle.className = 'nav-toggle';
-    document.querySelector('header').insertBefore(navToggle, nav);
-
-    navToggle.addEventListener('click', () => {
-        nav.classList.toggle('active');
+    // Smooth Scrolling
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            document.querySelector(this.getAttribute('href')).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
     });
-});
 
-// Ensure nav closes when a link is clicked in mobile view
-document.querySelectorAll('nav ul li a').forEach(link => {
-    link.addEventListener('click', () => {
-        const nav = document.querySelector('nav');
-        if (nav.classList.contains('active')) {
-            nav.classList.remove('active');
+    // Dynamic Active Navigation Link Highlighting
+    const sections = document.querySelectorAll('section');
+    const navLi = document.querySelectorAll('nav ul li a');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= sectionTop - sectionHeight / 3) {
+                current = section.getAttribute('id');
+            }
+        });
+        navLi.forEach(li => {
+            li.classList.remove('active');
+            if (li.href.includes(current)) {
+                li.classList.add('active');
+            }
+        });
+    });
+
+    // Portfolio Gallery (Assuming you have a modal or similar for viewing portfolio items)
+    // Implementation depends on your HTML structure for the portfolio.
+
+    // Contact Form Validation
+    const form = document.getElementById('contact-form');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        // Validate form fields here
+        // Example: Check if the email field is empty
+        const email = form.querySelector('input[type="email"]');
+        if (!email.value) {
+            alert('Please enter your email address');
+            return false;
         }
+        // Further validation logic here...
+        this.submit();
+    });
+
+    // Responsive Menu Toggle
+    const navToggle = document.querySelector('.nav-toggle');
+    navToggle.addEventListener('click', () => {
+        const nav = document.querySelector('nav ul');
+        nav.classList.toggle('active');
     });
 });
