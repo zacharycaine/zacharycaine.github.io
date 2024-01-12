@@ -6,6 +6,11 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
 body {
     background-color: rgb(0, 0, 0);
     line-height: 1.6;
@@ -14,9 +19,8 @@ body {
 
 header {
     display: flex;
-    align-items: left; /* Vertically align items in the center */
-    justify-content: space-between; /* Horizontally space out the items */
-    /* Other styles for your header */
+    align-items: left;
+    justify-content: space-between;
     color: white;
     background-color: rgb(34, 34, 34);
     padding: 5px;
@@ -34,14 +38,13 @@ nav ul li {
     margin: 0 20px;
 }
 
-/* these are the links in the header */
 nav ul li a {
     text-decoration: none;
     color: #ffffff;
 }
 
 nav ul li a.active {
-    color: #007aff; /* or any highlight color */
+    color: #007aff;
 }
 
 main {
@@ -56,18 +59,18 @@ section {
 footer {
     background-color: rgb(34, 34, 34);
     text-align: center;
-    padding: auto;
+    padding: 20px; /* Changed from 'auto' to a fixed value */
 }
 
 .responsive-image {
-    max-width: 100%; /* Ensures the image is no wider than its container */
-    height: auto; /* Maintains the aspect ratio of the image */
-    display: block; /* Removes any additional space below the image */
-    margin: 0 auto; /* Optional: Centers the image if it's smaller than the container */
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
 }
 
 .large-text {
-    font-size: 90px; /* Or any size you desire */
+    font-size: 90px;
 }
 
 .split-layout {
@@ -80,31 +83,25 @@ footer {
 
 .left-side {
     background-image: url('Assets/me.jpg');
-    background-size: cover; /* Ensures the image covers the entire div */
-    background-position: center; /* Center the image in the div */
+    background-size: cover;
+    background-position: center;
 }
 
 .left-side img {
-    width: 100%; /* Makes the image take the full width of its container */
-    height: 100%; /* Adjust the height as necessary */
-    object-fit: cover; /* This will ensure the image covers the area without distorting */
-}
-
-
-.right-side {
-    /* Styling for the right side content */
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .right-side p, .right-side h1, .right-side h2, .right-side h3 {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7); /* Adjust as needed */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .footer-text {
-    margin-top: 10px; /* Adjust this value as needed */
+    margin-top: 10px;
 }
 
 .footer-link {
-    /* Any additional styling for your link */
     margin-top: 10px;
     text-decoration: none;
     color: white;
@@ -113,6 +110,7 @@ footer {
 .menu-button {
     display: none;
     margin-left: 2px;
+    cursor: pointer; /* Added for better UX */
 }
 
 @media screen and (max-width: 768px) {
@@ -123,24 +121,24 @@ footer {
     .right-side {
         position: relative;
         z-index: 2;
-        margin-top: -100px;
+        margin-top: -200px;
     }
 
     .left-side img {
         width: 100%;
         height: auto;
     }
-    .menu-button{
+
+    .menu-button {
         display: block;
     }
+
     nav ul li {
         display: none;
         margin: 10px 0;
     }
+
     .split-layout {
         flex-direction: column;
     }
-    /* More responsive design adjustments */
 }
-
-/* Additional specific styles for each section and responsive design can be added here */

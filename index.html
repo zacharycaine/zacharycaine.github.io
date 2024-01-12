@@ -9,7 +9,7 @@
 </head>
 <body>
     <header>
-        <div class="menu-button" onclick="toggleMenu()">☰</div>
+        <div class="menu-button">☰</div>
         <nav>
             <ul>
                 <li><a href="#home">Home</a></li>
@@ -38,7 +38,7 @@
                     <form id="contact-form">
                         <input type="email" name="email" placeholder="Your Email">
                         <textarea name="message" placeholder="Your Message"></textarea>
-                        <button type="submit" style="color:black">Send</button>
+                        <button type="submit">Send</button>
                     </form>
                 </section>
             </main>
@@ -53,22 +53,5 @@
         <!-- Social media links -->
     </footer>    
     <script src="script.js"></script>
-    <script>
-        window.addEventListener('scroll', function() {
-            var scrollPosition = window.pageYOffset;
-            var rightSide = document.querySelector('.left-side');
-            
-            // Adjust '0.5' to control the speed difference
-            var parallaxOffset = scrollPosition * 0.6;
-            
-            // Apply the effect only when in column mode (narrow screen)
-            if (window.innerWidth <= 768) {
-                rightSide.style.transform = 'translateY(' + parallaxOffset + 'px)';
-            } else {
-                rightSide.style.transform = 'translateY(0px)';
-            }
-        });
-    </script>
-    
 </body>
 </html>

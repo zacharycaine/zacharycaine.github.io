@@ -30,30 +30,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.classList.add('active');
             }
         });
-    });
 
-    // Portfolio Gallery (Assuming you have a modal or similar for viewing portfolio items)
-    // Implementation depends on your HTML structure for the portfolio.
+        // Parallax Scrolling Effect
+        applyParallaxEffect();
+    });
 
     // Contact Form Validation
     const form = document.getElementById('contact-form');
     form.addEventListener('submit', function(event) {
         event.preventDefault();
-        // Validate form fields here
-        // Example: Check if the email field is empty
         const email = form.querySelector('input[type="email"]');
         if (!email.value) {
             alert('Please enter your email address');
             return false;
         }
-        // Further validation logic here...
         this.submit();
     });
 
     // Responsive Menu Toggle
-    const navToggle = document.querySelector('.nav-toggle');
+    const navToggle = document.querySelector('.menu-button');
     navToggle.addEventListener('click', () => {
         const nav = document.querySelector('nav ul');
         nav.classList.toggle('active');
     });
+
+    // Parallax effect function
+    function applyParallaxEffect() {
+        var rightSide = document.querySelector('.right-side');
+
+        // Adjust the multiplier for a faster parallax effect on the right side
+        var parallaxOffset = window.pageYOffset * 0.8; // Adjust this to make the right side move faster
+
+        // Apply the effect only when in column mode (narrow screen)
+        if (window.innerWidth <= 768) {
+            rightSide.style.transform = 'translateY(-' + parallaxOffset + 'px)';
+        } else {
+            rightSide.style.transform = 'translateY(0px)';
+        }
+    }
+
+    // Initial parallax effect application
+    applyParallaxEffect();
 });
