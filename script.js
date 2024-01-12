@@ -72,3 +72,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial parallax effect application
     applyParallaxEffect();
 });
+
+document.getElementById('contact-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const email = document.querySelector('input[name="email"]').value;
+    const message = document.querySelector('textarea[name="message"]').value;
+
+    try {
+        const response = await fetch('https://c2r8l4l33e.execute-api.us-east-1.amazonaws.com/Prod', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, message })
+        });
+
+        if (response.ok) {
+            console.log('Email sent successfully');
+            // Handle success (e.g., show a success message)
+        } else {
+            console.error('Error sending email');
+            // Handle error (e.g., show an error message)
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        // Handle network error
+    }
+});
