@@ -20,11 +20,26 @@ body {
 header {
     display: flex;
     align-items: left;
-    justify-content: space-between;
+    justify-content: space-around;
     color: white;
     background-color: rgb(34, 34, 34);
     padding: 5px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Styles for links in the header */
+header nav ul li a {
+    color: white; /* Set default link color to white */
+    text-decoration: none; /* Optional: removes underline from links */
+}
+
+/* Styles for links in different states */
+header nav ul li a:visited,
+header nav ul li a:hover,
+header nav ul li a:active,
+header nav ul li a:focus {
+    color: white; /* Keeps the link color white in all states */
+    text-decoration: none; /* Optional: keeps the links without underline in all states */
 }
 
 h3 {
@@ -77,6 +92,7 @@ footer {
 
 #contact-form input[type="email"], 
 #contact-form textarea {
+    color: black;
     width: 100%; /* Make the width consistent */
     padding: 10px; /* Adjust padding as needed */
     margin-bottom: 20px; /* Space between elements */
@@ -150,6 +166,10 @@ footer {
 }
 
 @media screen and (max-width: 768px) {
+    header {
+        justify-content: space-between;
+    }
+
     .left-side {
         display: block;
     }
@@ -169,8 +189,17 @@ footer {
         display: block;
     }
 
-    nav ul li {
+    nav ul {
         display: none;
+        margin: 10px 0;
+    }
+
+    nav ul.active {
+        display: block;
+    }
+
+    nav ul.active li {
+        display: block;
         margin: 10px 0;
     }
 

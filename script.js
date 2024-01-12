@@ -97,3 +97,5 @@ document.getElementById('contact-form').addEventListener('submit', async functio
         // Handle network error
     }
 });
+
+
