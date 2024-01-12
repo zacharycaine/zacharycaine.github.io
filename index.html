@@ -26,7 +26,7 @@
         <div class="right-side">
             <main>
                 <section id="home">
-                    <img src="Assets/welcome.png" alt="Greetings">
+                    <img src="Assets/welcomefig.png" alt="Thanks to Figma for this beautiful font" class="responsive-image">
                     <p>Let's learn to prompt.</p>
                 </section>
                 <section id="about">
@@ -53,5 +53,22 @@
         <!-- Social media links -->
     </footer>    
     <script src="script.js"></script>
+    <script>
+        window.addEventListener('scroll', function() {
+            var scrollPosition = window.pageYOffset;
+            var rightSide = document.querySelector('.left-side');
+            
+            // Adjust '0.5' to control the speed difference
+            var parallaxOffset = scrollPosition * 0.6;
+            
+            // Apply the effect only when in column mode (narrow screen)
+            if (window.innerWidth <= 768) {
+                rightSide.style.transform = 'translateY(' + parallaxOffset + 'px)';
+            } else {
+                rightSide.style.transform = 'translateY(0px)';
+            }
+        });
+    </script>
+    
 </body>
 </html>
