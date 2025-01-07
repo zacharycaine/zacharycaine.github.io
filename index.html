@@ -3,27 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            background-color: black;
-        }
-
-        .centered {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-        }
-    </style>
+    <title>What's wrong with you?</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="centered">
-        <img src="Assets/CuteCodeCompany.png" alt="Cute Code Company">
+    <div class="background-image">
+        <div class="content">
+            <h1 id="question">What's wrong with you?</h1>
+            <form id="answerForm">
+                <input type="text" id="userAnswer" placeholder="Type your answer here..." required>
+                <button type="submit">Submit</button>
+            </form>
+            <div id="response"></div>
+        </div>
     </div>
-<footer>
-</footer>    
+    <script src="script.js"></script>
 </body>
 </html>
