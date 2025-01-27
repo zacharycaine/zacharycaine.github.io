@@ -75,12 +75,10 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { GUI } from 'lil-gui';
-        import { Howl } from 'https://cdn.jsdelivr.net/npm/howler@2.2.3/+esm';
         import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
         import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
         let scene, camera, renderer, composer, gui;
-        let textMesh, sound, audioContext;
         let targetRotation = 0;
         let targetZoom = 1;
         let touchDistance = null;
@@ -199,19 +197,6 @@
             gui.add(textMesh.material, 'emissiveIntensity', 0, 2).name('Glow Strength');
             if (isMobile) gui.hide();
 
-            // Sound Setup (Replace with your GitHub sound URL)
-            sound = new Howl({
-                src: ['https://raw.githubusercontent.com/zacharycaine/zacharycaine.github.io/main/ohyeah2.mp4'],
-                volume: 0.7,
-                onload: () => {
-                    console.log('Sound loaded');
-                    loadingManager.onLoad();
-                },
-                onloaderror: (id, error) => {
-                    console.error('Sound failed to load:', error);
-                }
-            });
-
             // Event Listeners
             window.addEventListener('resize', onWindowResize);
             window.addEventListener('pointermove', onPointerMove);
@@ -226,13 +211,6 @@
             // Initial load complete
             loadingManager.onLoad();
         }
-
-        // Audio Context Resume
-        document.body.addEventListener('click', () => {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }, { once: true });
 
         function onTouchStart(e) {
             if (e.touches.length === 2) {
@@ -307,9 +285,6 @@
                 textMesh.scale.set(1, 1, 1);
             }, 200);
             
-            // Sound effect
-            if (sound.playing()) sound.stop();
-            sound.play();
         }
     </script>
 </body>
