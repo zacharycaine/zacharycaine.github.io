@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>XP9</title>
+    <title>It's starting right now dude</title>
     <style>
         * { margin: 0; padding: 0; }
         body { 
@@ -131,12 +131,12 @@
                 // Create text
                 const textGeometry = new TextGeometry('ZACK', {
                     font: font,
-                    size: 1.5,
+                    size: 2,
                     height: 0.5,
                     curveSegments: 12,
                     bevelEnabled: true,
-                    bevelThickness: 0.1,
-                    bevelSize: 0.05,
+                    bevelThickness: 0.2,
+                    bevelSize: 0.1,
                     bevelOffset: 0,
                     bevelSegments: 5
                 });
@@ -146,7 +146,7 @@
                     metalness: 0.9,
                     roughness: 0.2,
                     emissive: 0xff0066,
-                    emissiveIntensity: 0.3,
+                    emissiveIntensity: 0.5,
                     envMap: new THREE.CubeTextureLoader(loadingManager).load([
                         'https://threejs.org/examples/textures/cube/pisa/px.png',
                         'https://threejs.org/examples/textures/cube/pisa/nx.png',
@@ -192,16 +192,16 @@
             camera.position.z = 8;
 
             // GUI Controls
-            gui = new GUI({ title: 'Cinematic Controls', width: 300 });
+            gui = new GUI({ title: 'Play', width: 300 });
             gui.addColor(textMesh.material, 'color').name('Main Color');
             gui.add(textMesh.material, 'metalness', 0, 1).name('Metalness');
             gui.add(textMesh.material, 'roughness', 0, 1).name('Roughness');
             gui.add(textMesh.material, 'emissiveIntensity', 0, 2).name('Glow Strength');
             if (isMobile) gui.hide();
 
-            // Sound Setup
+            // Sound Setup (Replace with your GitHub sound URL)
             sound = new Howl({
-                src: ['https://assets.mixkit.co/sfx/preview/mixkit-laser-weapon-shot-1680.mp3'],
+                src: ['https://raw.githubusercontent.com/zacharycaine/zacharycaine.github.io/main/ohyeah.mp3'],
                 volume: 0.7,
                 onload: () => {
                     console.log('Sound loaded');
