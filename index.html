@@ -3,20 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What's wrong with you?</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Zachary Caine - Interactive Portfolio</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { 
+            overflow: hidden; 
+            background: #000;
+            font-family: Arial, sans-serif;
+        }
+        canvas { 
+            display: block; 
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        #info {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #fff;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="background-image">
-        <div class="content">
-            <h1 id="question">What's wrong with you?</h1>
-            <form id="answerForm">
-                <input type="text" id="userAnswer" placeholder="Type your answer here..." required>
-                <button type="submit">Submit</button>
-            </form>
-            <div id="response"></div>
-        </div>
-    </div>
-    <script src="script.js"></script>
+    <div id="info">Click and drag to interact • Scroll to zoom</div>
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        let scene, camera, renderer, composer;
+        let geometry, material, mesh;
+        let pointer = new THREE.Vector2();
+        let targetRotation = 0;
+        let targetZoom = 1;
+
+        init();
+        animate();
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            // Geometry with latest features
+            geometry = new THREE.IcosahedronGeometry(2, 5);
+            material = new THREE.MeshStandardMaterial({ 
+                color: 0x00ff88,
+                metalness: 0.8,
+                roughness: 0.3,
+                wireframe: true,
+                wireframeLinewidth: 2
+            });
+            mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const pointLight = new THREE.PointLight(0xffffff, 1);
+            pointLight.position.set(5, 5, 5);
+            scene.add(pointLight);
+
+            // Post-processing
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                1.5,
+                0.4,
+                0.85
+            );
+            composer.addPass(bloomPass);
+
+            // Camera position
+            camera.position.z = 5;
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('wheel', onMouseWheel);
+            window.addEventListener('click', onClick);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onPointerMove(event) {
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+            
+            targetRotation = pointer.x * 0.5;
+        }
+
+        function onMouseWheel(event) {
+            targetZoom += event.deltaY * 0.001;
+            targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
+        }
+
+        function onClick() {
+            material.wireframe = !material.wireframe;
+            material.needsUpdate = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            mesh.rotation.y += (targetRotation - mesh.rotation.y) * 0.05;
+            camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetZoom, 0.1);
+            camera.updateProjectionMatrix();
+
+            // Color animation
+            const time = Date.now() * 0.001;
+            material.color.setHSL(Math.sin(time * 0.5) * 0.5 + 0.5, 0.8, 0.5);
+
+            composer.render();
+        }
+    </script>
 </body>
 </html>
