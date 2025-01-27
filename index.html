@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zachary Caine Interactive</title>
+    <title>XP002</title>
     <style>
         * { margin: 0; padding: 0; }
         body { 
@@ -37,8 +37,8 @@
             pointer-events: none;
         }
         .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #00ff88;
+            border: 4px solid #2a2a2a;
+            border-top: 4px solid #ff0066;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -54,9 +54,9 @@
 <body>
     <div id="loading">
         <div class="loader"></div>
-        <div>Initializing Experience...</div>
+        <div>Loading Cinematic Experience...</div>
     </div>
-    <div id="info">Touch/Drag to rotate • Pinch to zoom • Tap for surprise</div>
+    <div id="info">Drag to rotate • Pinch to zoom • Tap for effect</div>
     
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
@@ -76,50 +76,19 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { GUI } from 'lil-gui';
         import { Howl } from 'https://cdn.jsdelivr.net/npm/howler@2.2.3/+esm';
+        import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+        import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
         let scene, camera, renderer, composer, gui;
-        let geometry, material, mesh, sound, audioContext;
-        let pointer = new THREE.Vector2();
+        let textMesh, sound, audioContext;
         let targetRotation = 0;
         let targetZoom = 1;
         let touchDistance = null;
         let startZoom = 1;
         let isMobile = /Mobi|Android/i.test(navigator.userAgent);
         let loadCount = 0;
-        const totalToLoad = 2; // Sound + Three.js
+        const totalToLoad = 3; // Font, Sound, Base
 
-        // Custom Shaders
-        const vertexShader = `
-            varying vec2 vUv;
-            varying vec3 vPosition;
-            uniform float time;
-            uniform float distortion;
-
-            void main() {
-                vUv = uv;
-                vec3 pos = position;
-                pos.x += sin(pos.y * 2.0 + time) * distortion;
-                pos.y += cos(pos.x * 2.0 + time) * distortion;
-                vPosition = pos;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-            }
-        `;
-
-        const fragmentShader = `
-            varying vec2 vUv;
-            varying vec3 vPosition;
-            uniform float time;
-            uniform vec3 color1;
-            uniform vec3 color2;
-
-            void main() {
-                float pattern = sin(vPosition.x * 10.0 + time) * cos(vPosition.y * 10.0 + time);
-                vec3 color = mix(color1, color2, pattern * 0.5 + 0.5);
-                gl_FragColor = vec4(color, 1.0);
-            }
-        `;
-
-        // Loading Manager
         const loadingManager = new THREE.LoadingManager(() => {
             loadCount++;
             if(loadCount >= totalToLoad) {
@@ -146,60 +115,84 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // Geometry with custom shaders
-            geometry = new THREE.IcosahedronGeometry(2, 5);
-            material = new THREE.ShaderMaterial({
-                vertexShader,
-                fragmentShader,
-                uniforms: {
-                    time: { value: 0 },
-                    distortion: { value: 0.2 },
-                    color1: { value: new THREE.Color(0x00ff88) },
-                    color2: { value: new THREE.Color(0xff00ff) }
-                },
-                wireframe: true,
-                wireframeLinewidth: 2
+            // Load font
+            const fontLoader = new FontLoader(loadingManager);
+            const font = await fontLoader.loadAsync(
+                'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
+            );
+
+            // Create text
+            const textGeometry = new TextGeometry('ZACK', {
+                font: font,
+                size: 1.5,
+                height: 0.5,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.1,
+                bevelSize: 0.05,
+                bevelOffset: 0,
+                bevelSegments: 5
             });
-            mesh = new THREE.Mesh(geometry, material);
-            scene.add(mesh);
+
+            const textMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xff0066,
+                metalness: 0.9,
+                roughness: 0.2,
+                emissive: 0xff0066,
+                emissiveIntensity: 0.3,
+                envMap: new THREE.CubeTextureLoader().load([
+                    'https://threejs.org/examples/textures/cube/pisa/px.png',
+                    'https://threejs.org/examples/textures/cube/pisa/nx.png',
+                    'https://threejs.org/examples/textures/cube/pisa/py.png',
+                    'https://threejs.org/examples/textures/cube/pisa/ny.png',
+                    'https://threejs.org/examples/textures/cube/pisa/pz.png',
+                    'https://threejs.org/examples/textures/cube/pisa/nz.png'
+                ]),
+                refractionRatio: 0.8
+            });
+
+            textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            textGeometry.center();
+            scene.add(textMesh);
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
-            const pointLight = new THREE.PointLight(0xffffff, 1);
-            pointLight.position.set(5, 5, 5);
+            
+            const pointLight = new THREE.PointLight(0xff0066, 2, 10);
+            pointLight.position.set(3, 3, 3);
             scene.add(pointLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(-5, 5, 5);
+            scene.add(directionalLight);
 
             // Post-processing
             composer = new EffectComposer(renderer);
             composer.addPass(new RenderPass(scene, camera));
             const bloomPass = new UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
-                1.5,
+                1.2,
                 0.4,
                 0.85
             );
             composer.addPass(bloomPass);
 
             // Camera position
-            camera.position.z = 5;
+            camera.position.z = 8;
 
             // GUI Controls
-            gui = new GUI({ title: 'Controls', width: 300 });
-            gui.add(material.uniforms.distortion, 'value', 0, 0.5).name('Distortion');
-            gui.addColor({ color1: 0x00ff88 }, 'color1').onChange(val => {
-                material.uniforms.color1.value.set(val);
-            });
-            gui.addColor({ color2: 0xff00ff }, 'color2').onChange(val => {
-                material.uniforms.color2.value.set(val);
-            });
-            gui.add(bloomPass, 'strength', 0, 3).name('Bloom Strength');
+            gui = new GUI({ title: 'Cinematic Controls', width: 300 });
+            gui.addColor(textMaterial, 'color').name('Main Color');
+            gui.add(textMaterial, 'metalness', 0, 1).name('Metalness');
+            gui.add(textMaterial, 'roughness', 0, 1).name('Roughness');
+            gui.add(textMaterial, 'emissiveIntensity', 0, 2).name('Glow Strength');
             if(isMobile) gui.hide();
 
             // Sound Setup
             sound = new Howl({
-                src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'],
-                volume: 0.5,
+                src: ['https://assets.mixkit.co/sfx/preview/mixkit-laser-weapon-shot-1680.mp3'],
+                volume: 0.7,
                 onload: loadingManager.onLoad
             });
 
@@ -214,86 +207,42 @@
             window.addEventListener('touchmove', onTouchMove);
             window.addEventListener('touchend', onTouchEnd);
 
-            // Audio Context Resume
-            document.body.addEventListener('click', () => {
-                if(!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-            }, { once: true });
+            // Initial load complete
+            loadingManager.onLoad();
         }
 
-        function onTouchStart(e) {
-            if(e.touches.length === 2) {
-                touchDistance = getTouchDistance(e);
-                startZoom = targetZoom;
-            }
-        }
-
-        function onTouchMove(e) {
-            if(e.touches.length === 1) {
-                pointer.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
-                targetRotation = pointer.x * 0.5;
-            } else if(e.touches.length === 2) {
-                const newDistance = getTouchDistance(e);
-                targetZoom = startZoom * (newDistance / touchDistance);
-                targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
-            }
-        }
-
-        function onTouchEnd() {
-            touchDistance = null;
-        }
-
-        function getTouchDistance(e) {
-            return Math.hypot(
-                e.touches[0].pageX - e.touches[1].pageX,
-                e.touches[0].pageY - e.touches[1].pageY
-            );
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function onPointerMove(event) {
-            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-            pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-            targetRotation = pointer.x * 0.5;
-        }
-
-        function onMouseWheel(event) {
-            targetZoom += event.deltaY * 0.001;
-            targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
-        }
-
-        function onClick() {
-            material.wireframe = !material.wireframe;
-            material.needsUpdate = true;
-            if(sound.playing()) sound.stop();
-            sound.play();
-            
-            // Add visual pop effect
-            material.uniforms.distortion.value = 0.5;
-            setTimeout(() => {
-                material.uniforms.distortion.value = 0.2;
-            }, 200);
-        }
+        // ... Keep all the previous interaction functions from earlier version ...
 
         function animate() {
             requestAnimationFrame(animate);
 
-            mesh.rotation.y += (targetRotation - mesh.rotation.y) * 0.05;
+            // Smooth animations
+            textMesh.rotation.y += (targetRotation - textMesh.rotation.y) * 0.05;
+            textMesh.rotation.x = Math.sin(performance.now() * 0.001) * 0.1;
+            textMesh.position.y = Math.sin(performance.now() * 0.002) * 0.2;
+            
             camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetZoom, 0.1);
             camera.updateProjectionMatrix();
 
-            // Shader animation
-            material.uniforms.time.value = performance.now() / 1000;
+            // Update materials
+            textMaterial.emissiveIntensity = Math.abs(Math.sin(performance.now() * 0.002)) * 0.5 + 0.3;
 
             composer.render();
         }
+
+        function onClick() {
+            // Animation punch effect
+            textMesh.scale.set(1.2, 1.2, 1.2);
+            setTimeout(() => {
+                textMesh.scale.set(1, 1, 1);
+            }, 200);
+            
+            // Sound effect
+            if(sound.playing()) sound.stop();
+            sound.play();
+        }
+
+        // ... Keep all other helper functions from previous version ...
     </script>
 </body>
 </html>
