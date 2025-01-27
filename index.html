@@ -211,7 +211,28 @@
             loadingManager.onLoad();
         }
 
-        // ... Keep all the previous interaction functions from earlier version ...
+                    // Audio Context Resume
+            document.body.addEventListener('click', () => {
+                if(!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }, { once: true });
+        }
+        function onTouchStart(e) {
+            if(e.touches.length === 2) {
+                touchDistance = getTouchDistance(e);
+                startZoom = targetZoom;
+            }
+        }
+        function onTouchMove(e) {
+            if(e.touches.length === 1) {
+                pointer.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+                targetRotation = pointer.x * 0.5;
+            } else if(e.touches.length === 2) {
+                const newDistance = getTouchDistance(e);
+                targetZoom = startZoom * (newDistance / touchDistance);
+                targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
+            }
 
         function animate() {
             requestAnimationFrame(animate);
