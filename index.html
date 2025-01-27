@@ -2,20 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zachary Caine - Interactive Portfolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zachary Caine Interactive</title>
     <style>
         * { margin: 0; padding: 0; }
         body { 
             overflow: hidden; 
             background: #000;
             font-family: Arial, sans-serif;
+            touch-action: none;
         }
         canvas { 
             display: block; 
             position: fixed;
             top: 0;
             left: 0;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 24px;
+            transition: opacity 1s;
         }
         #info {
             position: fixed;
@@ -26,16 +36,35 @@
             opacity: 0.7;
             pointer-events: none;
         }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00ff88;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div id="info">Click and drag to interact • Scroll to zoom</div>
+    <div id="loading">
+        <div class="loader"></div>
+        <div>Initializing Experience...</div>
+    </div>
+    <div id="info">Touch/Drag to rotate • Pinch to zoom • Tap for surprise</div>
+    
     <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/"
+                "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
+                "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.18.1/+esm"
             }
         }
     </script>
@@ -45,31 +74,89 @@
         import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { GUI } from 'lil-gui';
+        import { Howl } from 'https://cdn.jsdelivr.net/npm/howler@2.2.3/+esm';
 
-        let scene, camera, renderer, composer;
-        let geometry, material, mesh;
+        let scene, camera, renderer, composer, gui;
+        let geometry, material, mesh, sound, audioContext;
         let pointer = new THREE.Vector2();
         let targetRotation = 0;
         let targetZoom = 1;
+        let touchDistance = null;
+        let startZoom = 1;
+        let isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        let loadCount = 0;
+        const totalToLoad = 2; // Sound + Three.js
+
+        // Custom Shaders
+        const vertexShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            uniform float time;
+            uniform float distortion;
+
+            void main() {
+                vUv = uv;
+                vec3 pos = position;
+                pos.x += sin(pos.y * 2.0 + time) * distortion;
+                pos.y += cos(pos.x * 2.0 + time) * distortion;
+                vPosition = pos;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+        `;
+
+        const fragmentShader = `
+            varying vec2 vUv;
+            varying vec3 vPosition;
+            uniform float time;
+            uniform vec3 color1;
+            uniform vec3 color2;
+
+            void main() {
+                float pattern = sin(vPosition.x * 10.0 + time) * cos(vPosition.y * 10.0 + time);
+                vec3 color = mix(color1, color2, pattern * 0.5 + 0.5);
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        // Loading Manager
+        const loadingManager = new THREE.LoadingManager(() => {
+            loadCount++;
+            if(loadCount >= totalToLoad) {
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                }, 1000);
+            }
+        });
 
         init();
         animate();
 
-        function init() {
+        async function init() {
             // Scene setup
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true,
+                powerPreference: "high-performance"
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // Geometry with latest features
+            // Geometry with custom shaders
             geometry = new THREE.IcosahedronGeometry(2, 5);
-            material = new THREE.MeshStandardMaterial({ 
-                color: 0x00ff88,
-                metalness: 0.8,
-                roughness: 0.3,
+            material = new THREE.ShaderMaterial({
+                vertexShader,
+                fragmentShader,
+                uniforms: {
+                    time: { value: 0 },
+                    distortion: { value: 0.2 },
+                    color1: { value: new THREE.Color(0x00ff88) },
+                    color2: { value: new THREE.Color(0xff00ff) }
+                },
                 wireframe: true,
                 wireframeLinewidth: 2
             });
@@ -97,11 +184,71 @@
             // Camera position
             camera.position.z = 5;
 
-            // Event listeners
+            // GUI Controls
+            gui = new GUI({ title: 'Controls', width: 300 });
+            gui.add(material.uniforms.distortion, 'value', 0, 0.5).name('Distortion');
+            gui.addColor({ color1: 0x00ff88 }, 'color1').onChange(val => {
+                material.uniforms.color1.value.set(val);
+            });
+            gui.addColor({ color2: 0xff00ff }, 'color2').onChange(val => {
+                material.uniforms.color2.value.set(val);
+            });
+            gui.add(bloomPass, 'strength', 0, 3).name('Bloom Strength');
+            if(isMobile) gui.hide();
+
+            // Sound Setup
+            sound = new Howl({
+                src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'],
+                volume: 0.5,
+                onload: loadingManager.onLoad
+            });
+
+            // Event Listeners
             window.addEventListener('resize', onWindowResize);
             window.addEventListener('pointermove', onPointerMove);
             window.addEventListener('wheel', onMouseWheel);
             window.addEventListener('click', onClick);
+            
+            // Touch Events
+            window.addEventListener('touchstart', onTouchStart);
+            window.addEventListener('touchmove', onTouchMove);
+            window.addEventListener('touchend', onTouchEnd);
+
+            // Audio Context Resume
+            document.body.addEventListener('click', () => {
+                if(!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }, { once: true });
+        }
+
+        function onTouchStart(e) {
+            if(e.touches.length === 2) {
+                touchDistance = getTouchDistance(e);
+                startZoom = targetZoom;
+            }
+        }
+
+        function onTouchMove(e) {
+            if(e.touches.length === 1) {
+                pointer.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+                targetRotation = pointer.x * 0.5;
+            } else if(e.touches.length === 2) {
+                const newDistance = getTouchDistance(e);
+                targetZoom = startZoom * (newDistance / touchDistance);
+                targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
+            }
+        }
+
+        function onTouchEnd() {
+            touchDistance = null;
+        }
+
+        function getTouchDistance(e) {
+            return Math.hypot(
+                e.touches[0].pageX - e.touches[1].pageX,
+                e.touches[0].pageY - e.touches[1].pageY
+            );
         }
 
         function onWindowResize() {
@@ -114,7 +261,6 @@
         function onPointerMove(event) {
             pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
             pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-            
             targetRotation = pointer.x * 0.5;
         }
 
@@ -126,6 +272,14 @@
         function onClick() {
             material.wireframe = !material.wireframe;
             material.needsUpdate = true;
+            if(sound.playing()) sound.stop();
+            sound.play();
+            
+            // Add visual pop effect
+            material.uniforms.distortion.value = 0.5;
+            setTimeout(() => {
+                material.uniforms.distortion.value = 0.2;
+            }, 200);
         }
 
         function animate() {
@@ -135,9 +289,8 @@
             camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetZoom, 0.1);
             camera.updateProjectionMatrix();
 
-            // Color animation
-            const time = Date.now() * 0.001;
-            material.color.setHSL(Math.sin(time * 0.5) * 0.5 + 0.5, 0.8, 0.5);
+            // Shader animation
+            material.uniforms.time.value = performance.now() / 1000;
 
             composer.render();
         }
