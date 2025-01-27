@@ -75,17 +75,16 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { GUI } from 'lil-gui';
-        import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
-        import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 
         let scene, camera, renderer, composer, gui;
+        let blobMesh;
         let targetRotation = 0;
         let targetZoom = 1;
         let touchDistance = null;
         let startZoom = 1;
         let isMobile = /Mobi|Android/i.test(navigator.userAgent);
         let loadCount = 0;
-        const totalToLoad = 3; // Font, Sound, Base
+        const totalToLoad = 2; // Blob, Base
 
         const loadingManager = new THREE.LoadingManager(
             () => {
@@ -119,49 +118,42 @@
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
-            // Load font
-            const fontLoader = new FontLoader(loadingManager);
-            try {
-                const font = await fontLoader.loadAsync(
-                    'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
-                );
+            // Create a blob geometry
+            const blobGeometry = new THREE.SphereGeometry(1, 64, 64);
 
-                // Create text
-                const textGeometry = new TextGeometry('ZACK', {
-                    font: font,
-                    size: 2,
-                    height: 0.5,
-                    curveSegments: 12,
-                    bevelEnabled: true,
-                    bevelThickness: 0.2,
-                    bevelSize: 0.1,
-                    bevelOffset: 0,
-                    bevelSegments: 5
-                });
+            // Shader material for the blob
+            const blobMaterial = new THREE.ShaderMaterial({
+                vertexShader: `
+                    uniform float uTime;
+                    uniform float uMorph;
+                    varying vec3 vPosition;
+                    void main() {
+                        vPosition = position;
+                        float distortion = sin(position.x * 5.0 + uTime) * 0.1 * uMorph;
+                        vec3 newPosition = position + normal * distortion;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 uColor;
+                    varying vec3 vPosition;
+                    void main() {
+                        float glow = sin(vPosition.x * 5.0 + vPosition.y * 5.0) * 0.5 + 0.5;
+                        gl_FragColor = vec4(uColor * glow, 1.0);
+                    }
+                `,
+                uniforms: {
+                    uTime: { value: 0 },
+                    uMorph: { value: 0 },
+                    uColor: { value: new THREE.Color(0xff0066) }
+                },
+                transparent: true,
+                side: THREE.DoubleSide
+            });
 
-                const textMaterial = new THREE.MeshPhysicalMaterial({
-                    color: 0xff0066,
-                    metalness: 0.9,
-                    roughness: 0.2,
-                    emissive: 0xff0066,
-                    emissiveIntensity: 0.5,
-                    envMap: new THREE.CubeTextureLoader(loadingManager).load([
-                        'https://threejs.org/examples/textures/cube/pisa/px.png',
-                        'https://threejs.org/examples/textures/cube/pisa/nx.png',
-                        'https://threejs.org/examples/textures/cube/pisa/py.png',
-                        'https://threejs.org/examples/textures/cube/pisa/ny.png',
-                        'https://threejs.org/examples/textures/cube/pisa/pz.png',
-                        'https://threejs.org/examples/textures/cube/pisa/nz.png'
-                    ]),
-                    refractionRatio: 0.8
-                });
-
-                textMesh = new THREE.Mesh(textGeometry, textMaterial);
-                textGeometry.center();
-                scene.add(textMesh);
-            } catch (error) {
-                console.error('Failed to load font or textures:', error);
-            }
+            // Create the blob mesh
+            blobMesh = new THREE.Mesh(blobGeometry, blobMaterial);
+            scene.add(blobMesh);
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -191,10 +183,8 @@
 
             // GUI Controls
             gui = new GUI({ title: 'Play', width: 300 });
-            gui.addColor(textMesh.material, 'color').name('Main Color');
-            gui.add(textMesh.material, 'metalness', 0, 1).name('Metalness');
-            gui.add(textMesh.material, 'roughness', 0, 1).name('Roughness');
-            gui.add(textMesh.material, 'emissiveIntensity', 0, 2).name('Glow Strength');
+            gui.addColor(blobMaterial.uniforms.uColor, 'value').name('Blob Color');
+            gui.add(blobMaterial.uniforms.uMorph, 'value', 0, 1).name('Morph Intensity');
             if (isMobile) gui.hide();
 
             // Event Listeners
@@ -222,9 +212,10 @@
         function onTouchMove(e) {
             if (e.touches.length === 1) {
                 const pointer = {
-                    x: (e.touches[0].clientX / window.innerWidth) * 2 - 1
+                    x: (e.touches[0].clientX / window.innerWidth) * 2 - 1,
+                    y: -(e.touches[0].clientY / window.innerHeight) * 2 + 1
                 };
-                targetRotation = pointer.x * 0.5;
+                blobMesh.material.uniforms.uMorph.value = Math.abs(pointer.x) + Math.abs(pointer.y);
             } else if (e.touches.length === 2) {
                 const newDistance = getTouchDistance(e);
                 targetZoom = startZoom * (newDistance / touchDistance);
@@ -244,9 +235,10 @@
 
         function onPointerMove(e) {
             const pointer = {
-                x: (e.clientX / window.innerWidth) * 2 - 1
+                x: (e.clientX / window.innerWidth) * 2 - 1,
+                y: -(e.clientY / window.innerHeight) * 2 + 1
             };
-            targetRotation = pointer.x * 0.5;
+            blobMesh.material.uniforms.uMorph.value = Math.abs(pointer.x) + Math.abs(pointer.y);
         }
 
         function onMouseWheel(e) {
@@ -261,30 +253,37 @@
             composer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        // Add idle animation
+        let time = 0;
+        function animateBlob() {
+            time += 0.01;
+            blobMesh.material.uniforms.uTime.value = time;
+            blobMesh.material.uniforms.uMorph.value = Math.sin(time) * 0.5 + 0.5;
+        }
+
         function animate() {
             requestAnimationFrame(animate);
 
+            // Animate the blob
+            animateBlob();
+
             // Smooth animations
-            textMesh.rotation.y += (targetRotation - textMesh.rotation.y) * 0.05;
-            textMesh.rotation.x = Math.sin(performance.now() * 0.001) * 0.1;
-            textMesh.position.y = Math.sin(performance.now() * 0.002) * 0.2;
+            blobMesh.rotation.y += (targetRotation - blobMesh.rotation.y) * 0.05;
+            blobMesh.rotation.x = Math.sin(performance.now() * 0.001) * 0.1;
+            blobMesh.position.y = Math.sin(performance.now() * 0.002) * 0.2;
             
             camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetZoom, 0.1);
             camera.updateProjectionMatrix();
-
-            // Update materials
-            textMesh.material.emissiveIntensity = Math.abs(Math.sin(performance.now() * 0.002)) * 0.5 + 0.3;
 
             composer.render();
         }
 
         function onClick() {
             // Animation punch effect
-            textMesh.scale.set(1.2, 1.2, 1.2);
+            blobMesh.scale.set(1.2, 1.2, 1.2);
             setTimeout(() => {
-                textMesh.scale.set(1, 1, 1);
+                blobMesh.scale.set(1, 1, 1);
             }, 200);
-            
         }
     </script>
 </body>
