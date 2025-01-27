@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>XP008</title>
+    <title>XP002</title>
     <style>
         * { margin: 0; padding: 0; }
         body { 
@@ -89,15 +89,21 @@
         let loadCount = 0;
         const totalToLoad = 3; // Font, Sound, Base
 
-        const loadingManager = new THREE.LoadingManager(() => {
-            loadCount++;
-            if(loadCount >= totalToLoad) {
-                document.getElementById('loading').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                }, 1000);
+        const loadingManager = new THREE.LoadingManager(
+            () => {
+                loadCount++;
+                console.log(`Resource loaded. Load count: ${loadCount}`);
+                if (loadCount >= totalToLoad) {
+                    document.getElementById('loading').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('loading').style.display = 'none';
+                    }, 1000);
+                }
+            },
+            (url) => {
+                console.error(`Error loading resource: ${url}`);
             }
-        });
+        );
 
         init();
         animate();
@@ -117,43 +123,47 @@
 
             // Load font
             const fontLoader = new FontLoader(loadingManager);
-            const font = await fontLoader.loadAsync(
-                'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
-            );
+            try {
+                const font = await fontLoader.loadAsync(
+                    'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json'
+                );
 
-            // Create text
-            const textGeometry = new TextGeometry('ZACK', {
-                font: font,
-                size: 1.5,
-                height: 0.5,
-                curveSegments: 12,
-                bevelEnabled: true,
-                bevelThickness: 0.1,
-                bevelSize: 0.05,
-                bevelOffset: 0,
-                bevelSegments: 5
-            });
+                // Create text
+                const textGeometry = new TextGeometry('ZACK', {
+                    font: font,
+                    size: 1.5,
+                    height: 0.5,
+                    curveSegments: 12,
+                    bevelEnabled: true,
+                    bevelThickness: 0.1,
+                    bevelSize: 0.05,
+                    bevelOffset: 0,
+                    bevelSegments: 5
+                });
 
-            const textMaterial = new THREE.MeshPhysicalMaterial({
-                color: 0xff0066,
-                metalness: 0.9,
-                roughness: 0.2,
-                emissive: 0xff0066,
-                emissiveIntensity: 0.3,
-                envMap: new THREE.CubeTextureLoader().load([
-                    'https://threejs.org/examples/textures/cube/pisa/px.png',
-                    'https://threejs.org/examples/textures/cube/pisa/nx.png',
-                    'https://threejs.org/examples/textures/cube/pisa/py.png',
-                    'https://threejs.org/examples/textures/cube/pisa/ny.png',
-                    'https://threejs.org/examples/textures/cube/pisa/pz.png',
-                    'https://threejs.org/examples/textures/cube/pisa/nz.png'
-                ]),
-                refractionRatio: 0.8
-            });
+                const textMaterial = new THREE.MeshPhysicalMaterial({
+                    color: 0xff0066,
+                    metalness: 0.9,
+                    roughness: 0.2,
+                    emissive: 0xff0066,
+                    emissiveIntensity: 0.3,
+                    envMap: new THREE.CubeTextureLoader(loadingManager).load([
+                        'https://threejs.org/examples/textures/cube/pisa/px.png',
+                        'https://threejs.org/examples/textures/cube/pisa/nx.png',
+                        'https://threejs.org/examples/textures/cube/pisa/py.png',
+                        'https://threejs.org/examples/textures/cube/pisa/ny.png',
+                        'https://threejs.org/examples/textures/cube/pisa/pz.png',
+                        'https://threejs.org/examples/textures/cube/pisa/nz.png'
+                    ]),
+                    refractionRatio: 0.8
+                });
 
-            textMesh = new THREE.Mesh(textGeometry, textMaterial);
-            textGeometry.center();
-            scene.add(textMesh);
+                textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                textGeometry.center();
+                scene.add(textMesh);
+            } catch (error) {
+                console.error('Failed to load font or textures:', error);
+            }
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -183,17 +193,23 @@
 
             // GUI Controls
             gui = new GUI({ title: 'Cinematic Controls', width: 300 });
-            gui.addColor(textMaterial, 'color').name('Main Color');
-            gui.add(textMaterial, 'metalness', 0, 1).name('Metalness');
-            gui.add(textMaterial, 'roughness', 0, 1).name('Roughness');
-            gui.add(textMaterial, 'emissiveIntensity', 0, 2).name('Glow Strength');
-            if(isMobile) gui.hide();
+            gui.addColor(textMesh.material, 'color').name('Main Color');
+            gui.add(textMesh.material, 'metalness', 0, 1).name('Metalness');
+            gui.add(textMesh.material, 'roughness', 0, 1).name('Roughness');
+            gui.add(textMesh.material, 'emissiveIntensity', 0, 2).name('Glow Strength');
+            if (isMobile) gui.hide();
 
             // Sound Setup
             sound = new Howl({
                 src: ['https://assets.mixkit.co/sfx/preview/mixkit-laser-weapon-shot-1680.mp3'],
                 volume: 0.7,
-                onload: loadingManager.onLoad
+                onload: () => {
+                    console.log('Sound loaded');
+                    loadingManager.onLoad();
+                },
+                onloaderror: (id, error) => {
+                    console.error('Sound failed to load:', error);
+                }
             });
 
             // Event Listeners
@@ -213,25 +229,25 @@
 
         // Audio Context Resume
         document.body.addEventListener('click', () => {
-            if(!audioContext) {
+            if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
         }, { once: true });
 
         function onTouchStart(e) {
-            if(e.touches.length === 2) {
+            if (e.touches.length === 2) {
                 touchDistance = getTouchDistance(e);
                 startZoom = targetZoom;
             }
         }
         
         function onTouchMove(e) {
-            if(e.touches.length === 1) {
+            if (e.touches.length === 1) {
                 const pointer = {
                     x: (e.touches[0].clientX / window.innerWidth) * 2 - 1
                 };
                 targetRotation = pointer.x * 0.5;
-            } else if(e.touches.length === 2) {
+            } else if (e.touches.length === 2) {
                 const newDistance = getTouchDistance(e);
                 targetZoom = startZoom * (newDistance / touchDistance);
                 targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
@@ -292,7 +308,7 @@
             }, 200);
             
             // Sound effect
-            if(sound.playing()) sound.stop();
+            if (sound.playing()) sound.stop();
             sound.play();
         }
     </script>
