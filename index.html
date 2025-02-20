@@ -115,7 +115,7 @@
         function checkWin() {
             if (tiles.every((tile, i) => tile === winningOrder[i])) {
                 setTimeout(() => {
-                    alert('Solved! Shuffling for another round.');
+                    alert('good job bud');
                     tiles = shuffle([...tiles]);
                     renderPuzzle();
                 }, 100);
