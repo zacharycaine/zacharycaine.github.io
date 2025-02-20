@@ -12,38 +12,54 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #f0f0f0;
-            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #2c2c2c);
+            font-family: 'Segoe UI', sans-serif;
         }
         #puzzle-container {
-            width: 300px;
-            height: 300px;
+            width: 330px;
+            height: 330px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            background-color: #333;
-            padding: 5px;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            gap: 8px;
+            background: #0f0f0f;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
         .tile {
             width: 100px;
             height: 100px;
-            background-color: #fff;
+            background: linear-gradient(145deg, #2a2a2a, #1f1f1f);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 28px;
+            font-weight: 600;
+            color: #e0e0e0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
         }
         .tile:hover {
-            transform: scale(1.05);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        .tile:active {
+            transform: translateY(1px);
         }
         .empty {
-            background-color: transparent;
+            background: transparent;
             cursor: default;
+        }
+        @keyframes subtle-glow {
+            0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); }
+            50% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.15); }
+            100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); }
+        }
+        #puzzle-container {
+            animation: subtle-glow 4s infinite ease-in-out;
         }
     </style>
 </head>
@@ -98,13 +114,15 @@
         // check if solved
         function checkWin() {
             if (tiles.every((tile, i) => tile === winningOrder[i])) {
-                setTimeout(() => alert('good job bud'), 100);
-                tiles = shuffle([...tiles]);
-                renderPuzzle();
+                setTimeout(() => {
+                    alert('Solved! Shuffling for another round.');
+                    tiles = shuffle([...tiles]);
+                    renderPuzzle();
+                }, 100);
             }
         }
 
-        // start game
+        // init puzzle
         tiles = shuffle([...tiles]);
         renderPuzzle();
     </script>
