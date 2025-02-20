@@ -2,289 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>It's starting right now dude</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>relax</title>
     <style>
-        * { margin: 0; padding: 0; }
-        body { 
-            overflow: hidden; 
-            background: #000;
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
-            touch-action: none;
         }
-        canvas { 
-            display: block; 
-            position: fixed;
-            top: 0;
-            left: 0;
+        #puzzle-container {
+            width: 300px;
+            height: 300px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            background-color: #333;
+            padding: 5px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         }
-        #loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #fff;
+        .tile {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-size: 24px;
-            transition: opacity 1s;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
         }
-        #info {
-            position: fixed;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            color: #fff;
-            opacity: 0.7;
-            pointer-events: none;
+        .tile:hover {
+            transform: scale(1.05);
         }
-        .loader {
-            border: 4px solid #2a2a2a;
-            border-top: 4px solid #ff0066;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .empty {
+            background-color: transparent;
+            cursor: default;
         }
     </style>
 </head>
 <body>
-    <div id="loading">
-        <div class="loader"></div>
-        <div>Loading...</div>
-    </div>
-    <div id="info">DRAG / PINCH / TAP</div>
-    
-    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
-                "lil-gui": "https://cdn.jsdelivr.net/npm/lil-gui@0.18.1/+esm"
+    <div id="puzzle-container"></div>
+
+    <script>
+        const container = document.getElementById('puzzle-container');
+        let tiles = [1, 2, 3, 4, 5, 6, 7, 8, null];
+        const winningOrder = [1, 2, 3, 4, 5, 6, 7, 8, null];
+
+        // shuffle tiles
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
             }
+            return array;
         }
-    </script>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-        import { GUI } from 'lil-gui';
-
-        let scene, camera, renderer, composer, gui;
-        let blobMesh;
-        let targetRotation = 0;
-        let targetZoom = 1;
-        let touchDistance = null;
-        let startZoom = 1;
-        let isMobile = /Mobi|Android/i.test(navigator.userAgent);
-        let loadCount = 0;
-        const totalToLoad = 2; // Blob, Base
-
-        const loadingManager = new THREE.LoadingManager(
-            () => {
-                loadCount++;
-                console.log(`Resource loaded. Load count: ${loadCount}`);
-                if (loadCount >= totalToLoad) {
-                    document.getElementById('loading').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('loading').style.display = 'none';
-                    }, 1000);
-                }
-            },
-            (url) => {
-                console.error(`Error loading resource: ${url}`);
-            }
-        );
-
-        init();
-        animate();
-
-        async function init() {
-            // Scene setup
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ 
-                antialias: true, 
-                alpha: true,
-                powerPreference: "high-performance"
+        // render puzzle
+        function renderPuzzle() {
+            container.innerHTML = '';
+            tiles.forEach((tile, index) => {
+                const div = document.createElement('div');
+                div.className = tile === null ? 'tile empty' : 'tile';
+                div.textContent = tile !== null ? tile : '';
+                div.addEventListener('click', () => moveTile(index));
+                container.appendChild(div);
             });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            document.body.appendChild(renderer.domElement);
-
-            // Create a blob geometry
-            const blobGeometry = new THREE.SphereGeometry(1, 64, 64);
-
-            // Shader material for the blob
-            const blobMaterial = new THREE.ShaderMaterial({
-                vertexShader: `
-                    uniform float uTime;
-                    uniform float uMorph;
-                    varying vec3 vPosition;
-                    void main() {
-                        vPosition = position;
-                        float distortion = sin(position.x * 5.0 + uTime) * 0.1 * uMorph;
-                        vec3 newPosition = position + normal * distortion;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 uColor;
-                    varying vec3 vPosition;
-                    void main() {
-                        float glow = sin(vPosition.x * 5.0 + vPosition.y * 5.0) * 0.5 + 0.5;
-                        gl_FragColor = vec4(uColor * glow, 1.0);
-                    }
-                `,
-                uniforms: {
-                    uTime: { value: 0 },
-                    uMorph: { value: 0 },
-                    uColor: { value: new THREE.Color(0xff0066) }
-                },
-                transparent: true,
-                side: THREE.DoubleSide
-            });
-
-            // Create the blob mesh
-            blobMesh = new THREE.Mesh(blobGeometry, blobMaterial);
-            scene.add(blobMesh);
-
-            // Lighting
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
-            
-            const pointLight = new THREE.PointLight(0xff0066, 2, 10);
-            pointLight.position.set(3, 3, 3);
-            scene.add(pointLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(-5, 5, 5);
-            scene.add(directionalLight);
-
-            // Post-processing
-            composer = new EffectComposer(renderer);
-            composer.addPass(new RenderPass(scene, camera));
-            const bloomPass = new UnrealBloomPass(
-                new THREE.Vector2(window.innerWidth, window.innerHeight),
-                1.2,
-                0.4,
-                0.85
-            );
-            composer.addPass(bloomPass);
-
-            // Camera position
-            camera.position.z = 8;
-
-            // GUI Controls
-            gui = new GUI({ title: 'Play', width: 300 });
-            gui.addColor(blobMaterial.uniforms.uColor, 'value').name('Blob Color');
-            gui.add(blobMaterial.uniforms.uMorph, 'value', 0, 1).name('Morph Intensity');
-            if (isMobile) gui.hide();
-
-            // Event Listeners
-            window.addEventListener('resize', onWindowResize);
-            window.addEventListener('pointermove', onPointerMove);
-            window.addEventListener('wheel', onMouseWheel);
-            window.addEventListener('click', onClick);
-            
-            // Touch Events
-            window.addEventListener('touchstart', onTouchStart);
-            window.addEventListener('touchmove', onTouchMove);
-            window.addEventListener('touchend', onTouchEnd);
-
-            // Initial load complete
-            loadingManager.onLoad();
         }
 
-        function onTouchStart(e) {
-            if (e.touches.length === 2) {
-                touchDistance = getTouchDistance(e);
-                startZoom = targetZoom;
-            }
-        }
-        
-        function onTouchMove(e) {
-            if (e.touches.length === 1) {
-                const pointer = {
-                    x: (e.touches[0].clientX / window.innerWidth) * 2 - 1,
-                    y: -(e.touches[0].clientY / window.innerHeight) * 2 + 1
-                };
-                blobMesh.material.uniforms.uMorph.value = Math.abs(pointer.x) + Math.abs(pointer.y);
-            } else if (e.touches.length === 2) {
-                const newDistance = getTouchDistance(e);
-                targetZoom = startZoom * (newDistance / touchDistance);
-                targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
+        // check can move
+        function moveTile(index) {
+            const emptyIndex = tiles.indexOf(null);
+            const validMoves = [
+                index - 1, // left
+                index + 1, // right
+                index - 3, // up
+                index + 3  // down
+            ];
+
+            if (validMoves.includes(emptyIndex) && 
+                !(index % 3 === 0 && emptyIndex === index - 1) && 
+                !(index % 3 === 2 && emptyIndex === index + 1)) {
+                [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+                renderPuzzle();
+                checkWin();
             }
         }
 
-        function onTouchEnd() {
-            touchDistance = null;
+        // check if solved
+        function checkWin() {
+            if (tiles.every((tile, i) => tile === winningOrder[i])) {
+                setTimeout(() => alert('You solved it! Relax and try again.'), 100);
+                tiles = shuffle([...tiles]);
+                renderPuzzle();
+            }
         }
 
-        function getTouchDistance(e) {
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            return Math.sqrt(dx * dx + dy * dy);
-        }
-
-        function onPointerMove(e) {
-            const pointer = {
-                x: (e.clientX / window.innerWidth) * 2 - 1,
-                y: -(e.clientY / window.innerHeight) * 2 + 1
-            };
-            blobMesh.material.uniforms.uMorph.value = Math.abs(pointer.x) + Math.abs(pointer.y);
-        }
-
-        function onMouseWheel(e) {
-            targetZoom += e.deltaY * -0.001;
-            targetZoom = THREE.MathUtils.clamp(targetZoom, 0.5, 3);
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // Add idle animation
-        let time = 0;
-        function animateBlob() {
-            time += 0.01;
-            blobMesh.material.uniforms.uTime.value = time;
-            blobMesh.material.uniforms.uMorph.value = Math.sin(time) * 0.5 + 0.5;
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Animate the blob
-            animateBlob();
-
-            // Smooth animations
-            blobMesh.rotation.y += (targetRotation - blobMesh.rotation.y) * 0.05;
-            blobMesh.rotation.x = Math.sin(performance.now() * 0.001) * 0.1;
-            blobMesh.position.y = Math.sin(performance.now() * 0.002) * 0.2;
-            
-            camera.zoom = THREE.MathUtils.lerp(camera.zoom, targetZoom, 0.1);
-            camera.updateProjectionMatrix();
-
-            composer.render();
-        }
-
-        function onClick() {
-            // Animation punch effect
-            blobMesh.scale.set(1.2, 1.2, 1.2);
-            setTimeout(() => {
-                blobMesh.scale.set(1, 1, 1);
-            }, 200);
-        }
+        // start game
+        tiles = shuffle([...tiles]);
+        renderPuzzle();
     </script>
 </body>
 </html>
